@@ -1,0 +1,33 @@
+# --------------------------------------
+# myrequirements.txt for FastHTML
+# --------------------------------------
+# pip install --upgrade pip
+# pip install -Ur myrequirements.txt
+# --------------------------------------
+# pip install -U pip-autoremove
+# pip-autoremove -y somepackage
+# pip freeze | grep somepackage
+# --------------------------------------
+pip
+notebook
+jupyterlab
+ipywidgets
+numpy
+pandas
+ipython
+matplotlib
+python-dotenv
+pip-autoremove
+# --------------------------------------
+openai
+ollama
+anthropic
+# --------------------------------------
+pymupdf        # read PDF files
+uvicorn
+python-fasthtml
+fastapi
+# chromadb # obsolete, use Milvus Lite instead
+pymilvus
+sentence-transformers
+# --------------------------------------
