@@ -18,7 +18,7 @@ client = chromadb.Client()
 collection = client.create_collection(name="my_file_collection")
 
 # Specify the file path
-file_path = "batman.txt"  # Replace with your actual file path
+file_path = "batman2.txt"  # Replace with your actual file path
 
 # Open and read the file
 with open(file_path, "r") as file:
@@ -36,7 +36,7 @@ model = SentenceTransformer('paraphrase-MiniLM-L6-v2') # Choose an appropriate m
 chunk_embeddings = model.encode(chunks)
 
 metadata = [
-    {"source": "batman.txt", "chunk_id": i, "topic": "NLTK Chunking", "year": 2023} # Adjust the year as needed
+    {"source": "batman2.txt", "chunk_id": i, "topic": "NLTK Chunking", "year": 2023} # Adjust the year as needed
     for i in range(len(chunks))
 ]
 
@@ -50,12 +50,12 @@ collection.add(
 
 # Search by "year" metadata
 results = collection.query(
-    query_texts=["something about NLTK Chunking"],
+    query_texts=["Who is Batman?"],
     n_results=2,
     where={
         "$and": [
             {"year": 2023},
-            {"source": "batman.txt"}
+            {"source": "batman2.txt"}
         ]
     } 
 )

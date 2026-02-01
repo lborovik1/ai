@@ -6,6 +6,7 @@ from sentence_transformers import SentenceTransformer
 
 # Download the necessary NLTK data files
 nltk.download('punkt')
+nltk.download('punkt_tab')
 
 # Step 1: Read the text from a .txt file and chunk it into sentences using NLTK
 def read_and_chunk_txt_file(file_path):
@@ -35,7 +36,7 @@ def search_index(index, query_vector, top_k=5):
 # Main function
 def main():
     # Path to your .txt file with text content
-    file_path = "batman.txt"
+    file_path = "batman2.txt"
     print("starting...")
 
     # Step 1: Read and chunk the text from the file using NLTK
