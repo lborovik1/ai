@@ -11,11 +11,12 @@
 # 3. Fixed collection management with proper checking
 # 4. Removed hard-coded filters
 # 5. Removed duplicate functions
-# 6. Implemented proper unique ID management
+# 6. Implemented proper unique ID management with INTEGER IDs (not strings)
 # 7. Connected file upload to indexing
 # 8. Improved text chunking with sentence-based splitting
 # 9. Added comprehensive error handling
 # 10. Fixed search results formatting
+# 11. Fixed Milvus DataNotMatchException - changed ID from string to int64
 """
 
 from fasthtml.common import *
@@ -45,7 +46,7 @@ class SimpleBag:
 bag = SimpleBag()
 
 client = ollama.Client()
-model = "mistral:7b-instruct-v0.3-q4_0"
+model = "devstral-small-2:latest"
 messages = []
 messages_for_show = []
 
@@ -54,6 +55,7 @@ m_client = None
 embedding_model = None
 COLLECTION_NAME = "demo_collection"
 EMBEDDING_DIM = 384
+document_id_counter = 0  # FIX: Counter for unique integer IDs
 
 bag.script_dir = os.path.dirname(os.path.realpath(__file__))
 bag.dir_out = bag.script_dir + "/uploaded_files"
@@ -133,7 +135,7 @@ def process_file_for_indexing(filename, file_path):
     Returns:
         List of document dictionaries ready for indexing
     """
-    global embedding_model
+    global embedding_model, document_id_counter
     
     try:
         # Read file
@@ -152,11 +154,12 @@ def process_file_for_indexing(filename, file_path):
         # Generate embeddings
         embeddings = embedding_model.encode(chunks)
         
-        # FIX #6: Create unique IDs for each chunk
+        # FIX #6: Create unique integer IDs for each chunk (Milvus requires int64)
         documents = []
         for i, (chunk, embedding) in enumerate(zip(chunks, embeddings)):
+            document_id_counter += 1  # Increment global counter for unique IDs
             doc = {
-                "id": f"{filename}_{i}",  # Unique ID per chunk
+                "id": document_id_counter,  # Use integer ID instead of string
                 "vector": embedding.tolist(),
                 "text": chunk,
                 "filename": filename,
@@ -169,6 +172,8 @@ def process_file_for_indexing(filename, file_path):
         
     except Exception as e:
         print(f"Error processing file {filename}: {e}")
+        import traceback
+        traceback.print_exc()
         return []
 
 #---------------------------------------------------------------
@@ -262,59 +267,71 @@ def get():
         Div(
             H1("Chatbot using FastHTML, Ollama & Milvus"),
             Div(
-            P(Img(src="https://fastht.ml/assets/logo.svg", width=100, height=100)),
+                P(Img(src="https://fastht.ml/assets/logo.svg", width=100, height=100)),
             ),
             A("About", href="/about"),
-            get_history(),
-            Div("File Upload:"),
-                Div(P("Ask a question:"),
-                Form(Group(
-                     Input(id="new-prompt", type="text", name="data", placeholder="Type your question..."),
-                     Button("Submit")
-                     ),
-                     ws_send=True, hx_ext="ws", ws_connect="/wscon", 
-                     target_id='message-list',
-                     hx_swap="beforeend",
-                     enctype="multipart/form-data"
-                     )),
-                    Div("Drag files here or click to upload:", id="container", 
-                    style="width: 400px; height: 150px; background-color: #e8f4f8; border: 2px dashed #4a90e2; border-radius: 8px; display: flex; align-items: center; justify-content: center; cursor: pointer;"),
-                    Form(
+            
+            # File Upload Section
+            Div(
+                H3("Upload Files:"),
+                Div("Drag files here or click to upload:", id="drop-zone", 
+                    style="width: 400px; height: 100px; background-color: #e8f4f8; border: 2px dashed #4a90e2; border-radius: 8px; display: flex; align-items: center; justify-content: center; cursor: pointer; margin-bottom: 10px;"),
+                Div(id="upload-status", style="margin-bottom: 20px;"),  # Separate status area
+                Form(
                     Input(id='file', name='file', type='file', multiple=True, accept=".txt", 
                           onchange="this.form.querySelector('button').click()"),
                     Button('Upload', type="submit", style="display: none;"),
                     id="upload-form",
                     hx_post="/upload",
-                    target_id="container",
+                    target_id="upload-status",
                     hx_swap="innerHTML",
                     enctype="multipart/form-data"
                 ),
+                style="margin-bottom: 30px; padding: 20px; background-color: #f9f9f9; border-radius: 8px;"
+            ),
+            
+            # Chat Section
+            Div(
+                H3("Chat:"),
+                get_history(),
+                Form(
+                    Group(
+                        Input(id="new-prompt", type="text", name="data", placeholder="Type your question...", style="width: 400px;"),
+                        Button("Submit")
+                    ),
+                    ws_send=True, hx_ext="ws", ws_connect="/wscon", 
+                    target_id='message-list',
+                    hx_swap="beforeend"
+                ),
+                style="padding: 20px; background-color: #f0f0f0; border-radius: 8px;"
+            ),
+            
             Script(
             """
-            const container = document.getElementById('container');
+            const dropZone = document.getElementById('drop-zone');
             const fileInput = document.getElementById('file');
             const form = document.getElementById('upload-form');
             
-            container.addEventListener('click', () => fileInput.click());
+            dropZone.addEventListener('click', () => fileInput.click());
             
-            container.addEventListener('dragover', (event) => {
+            dropZone.addEventListener('dragover', (event) => {
                 event.preventDefault();
-                container.style.backgroundColor = '#d0e8f2';
+                dropZone.style.backgroundColor = '#d0e8f2';
             });
             
-            container.addEventListener('dragleave', () => {
-                container.style.backgroundColor = '#e8f4f8';
+            dropZone.addEventListener('dragleave', () => {
+                dropZone.style.backgroundColor = '#e8f4f8';
             });
 
-            container.addEventListener('drop', (event) => {
+            dropZone.addEventListener('drop', (event) => {
                 event.preventDefault();
-                container.style.backgroundColor = '#e8f4f8';
+                dropZone.style.backgroundColor = '#e8f4f8';
                 const files = event.dataTransfer.files; 
                 fileInput.files = files; 
                 form.dispatchEvent(new Event('submit')); 
             });
             """
-        )
+            )
         ))
     )
     

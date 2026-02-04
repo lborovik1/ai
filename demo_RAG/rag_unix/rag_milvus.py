@@ -20,21 +20,26 @@ import common_tools as ct
 from pymilvus import MilvusClient
 
 
-app, rt, = fast_app(live=True, exts='ws', pico=False, ws_hdr=True, hdrs=[
-    Link(
-        rel="stylesheet",
-        href="https://cdn.jsdelivr.net/npm/daisyui@4.11.1/dist/full.min.css"
+app, rt = fast_app(
+    live=True, 
+    pico=False, 
+    ws_hdr=True, 
+    exts='ws',
+    hdrs=[
+        Link(
+            rel="stylesheet",
+            href="https://cdn.jsdelivr.net/npm/daisyui@4.11.1/dist/full.min.css"
         ), 
-    Link(
-        rel="stylesheet", 
-        href="https://cdn.jsdelivr.net/npm/@picocss/pico@latest/css/pico.min.css"
+        Link(
+            rel="stylesheet", 
+            href="https://cdn.jsdelivr.net/npm/@picocss/pico@latest/css/pico.min.css"
         ),
-    Link(
-        rel='stylesheet', 
-        href='styles.css'
+        Link(
+            rel='stylesheet', 
+            href='styles.css'
         )
-    
-])
+    ]
+)
 
 m_client = None
 isRAG = False
